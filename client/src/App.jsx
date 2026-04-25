@@ -1,21 +1,52 @@
 import React, { useState, useEffect } from 'react';
+import Login from './components/Login';
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('aura_token'));
   const [tasks, setTasks] = useState([]);
   const [stats, setStats] = useState({ completed: 0, ongoing: 0, pending: 0, efficiency: '0%' });
   const [loading, setLoading] = useState(true);
 
+  const handleLogin = (newToken, userData) => {
+    setToken(newToken);
+    setUser(userData);
+    localStorage.setItem('aura_token', newToken);
+  };
+
+  const handleLogout = () => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('aura_token');
+  };
+
   useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       try {
-        const [tasksRes, statsRes] = await Promise.all([
-          fetch('/api/tasks'),
-          fetch('/api/stats')
+        const headers = { 'Authorization': `Bearer ${token}` };
+        const [tasksRes, statsRes, userRes] = await Promise.all([
+          fetch('/api/tasks', { headers }),
+          fetch('/api/stats', { headers }),
+          fetch('/api/auth/me', { headers })
         ]);
+
+        if (tasksRes.status === 401 || statsRes.status === 401) {
+            handleLogout();
+            return;
+        }
+
         const tasksData = await tasksRes.json();
         const statsData = await statsRes.json();
+        const userData = await userRes.json();
+        
         setTasks(tasksData);
         setStats(statsData);
+        setUser(userData);
       } catch (error) {
         console.error("Failed to fetch data:", error);
       } finally {
@@ -24,19 +55,32 @@ function App() {
     };
 
     fetchData();
-  }, []);
+  }, [token]);
+
+  if (loading) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505' }}>
+        <h2 className="gradient-text">Initializing Aura...</h2>
+      </div>
+    );
+  }
+
+  if (!token) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
     <div className="aura-container">
       <header style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 className="gradient-text" style={{ fontSize: '2.5rem' }}>Aura</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Welcome back to your workspace.</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Welcome back, {user?.email?.split('@')[0] || 'User'}.</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)' }} onClick={handleLogout}>Logout</button>
           <button>+ New Project</button>
-          <div className="glass-card" style={{ padding: '0.8rem 1rem', borderRadius: '12px' }}>
-             JD
+          <div className="glass-card" style={{ padding: '0.8rem 1rem', borderRadius: '12px', fontWeight: 'bold' }}>
+             {user?.email?.[0].toUpperCase() || 'U'}
           </div>
         </div>
       </header>
@@ -64,7 +108,7 @@ function App() {
         <div className="glass-card" style={{ gridColumn: 'span 2' }}>
           <h3>Recent Tasks</h3>
           <div className="task-list" style={{ marginTop: '1rem' }}>
-            {loading ? <p>Loading tasks...</p> : tasks.map(task => (
+            {tasks.map(task => (
               <div key={task.id} className="task-item">
                 <div style={{ 
                   width: '10px', 

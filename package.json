@@ -1,6 +1,11 @@
 {
   "name": "dummy-project",
   "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "description": "",
   "main": "index.js",
   "scripts": {
