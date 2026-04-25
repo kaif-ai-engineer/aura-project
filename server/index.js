@@ -2,9 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { PrismaClient } = require('@prisma/client');
 require('dotenv').config();
 
 const app = express();
+const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5001;
 
 app.use(cors());
@@ -12,24 +14,40 @@ app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'aura-secret-key-123';
 
-// Mock User Database
-const users = [
-    { id: 1, email: 'admin@aura.sh', password: '$2a$10$vI8qS/S6V.uS8X.V.uS8X.V.uS8X.V.uS8X.V.uS8X.V.uS8X.V.u' } // password123
-];
+// Seed initial data if needed
+const seedData = async () => {
+    const userCount = await prisma.user.count();
+    if (userCount === 0) {
+        const hashedPassword = await bcrypt.hash('password123', 10);
+        await prisma.user.create({
+            data: { email: 'admin@aura.sh', password: hashedPassword }
+        });
+        
+        await prisma.task.createMany({
+            data: [
+                { title: 'Refactor Auth System', status: 'In Progress', priority: 'High', category: 'Backend' },
+                { title: 'Design Aura UI System', status: 'Completed', priority: 'Critical', category: 'Design' },
+                { title: 'Implement Dashboard Widgets', status: 'Todo', priority: 'Medium', category: 'Frontend' },
+                { title: 'Server-side Optimization', status: 'Todo', priority: 'Low', category: 'Performance' },
+            ]
+        });
+        
+        await prisma.stat.create({
+            data: { completed: 12, ongoing: 5, pending: 8, efficiency: '94%' }
+        });
+        
+        console.log('Seeded initial data.');
+    }
+};
 
-// Helper to find user
-const findUser = (email) => users.find(u => u.email === email);
-
-// i'm making some changes here for testing purpose. 
-//the code which will come here will be for login purpose.
+seedData();
 
 // Auth Routes
 app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
-    const user = findUser(email);
+    const user = await prisma.user.findUnique({ where: { email } });
     
-    // In a real app we'd use bcrypt.compare, but for this mock we'll allow password123
-    if (user && (password === 'password123')) {
+    if (user && await bcrypt.compare(password, user.password)) {
         const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
         return res.json({ token, user: { id: user.id, email: user.email } });
     }
@@ -71,17 +89,21 @@ let stats = {
 };
 
 // Routes
-app.get('/api/tasks', authenticateToken, (req, res) => {
+app.get('/api/tasks', authenticateToken, async (req, res) => {
+    const tasks = await prisma.task.findMany({ orderBy: { id: 'desc' } });
     res.json(tasks);
 });
 
-app.get('/api/stats', authenticateToken, (req, res) => {
+app.get('/api/stats', authenticateToken, async (req, res) => {
+    const stats = await prisma.stat.findFirst();
     res.json(stats);
 });
 
-app.post('/api/tasks', authenticateToken, (req, res) => {
-    const newTask = { id: Date.now(), ...req.body };
-    tasks.push(newTask);
+app.post('/api/tasks', authenticateToken, async (req, res) => {
+    const { title, status, priority, category } = req.body;
+    const newTask = await prisma.task.create({
+        data: { title, status, priority, category }
+    });
     res.status(201).json(newTask);
 });
 
