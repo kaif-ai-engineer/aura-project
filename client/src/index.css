@@ -354,3 +354,71 @@ tr:hover td {
   height: 2px;
   background: var(--accent-gradient);
 }
+
+/* Pagination Styles */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.pagination-info {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.page-btn {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-secondary) !important;
+  padding: 0.5rem 0.8rem !important;
+  border-radius: 8px !important;
+  font-size: 0.85rem !important;
+  transition: var(--transition);
+}
+
+.page-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.page-btn.active {
+  background: var(--accent-gradient) !important;
+  border: none !important;
+  color: white !important;
+}
+
+.page-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Sortable Headers */
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition);
+}
+
+.sortable:hover {
+  color: white;
+}
+
+.sort-icon {
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  opacity: 0.5;
+}
+
+.sort-icon.active {
+  opacity: 1;
+  color: var(--accent-color);
+}
