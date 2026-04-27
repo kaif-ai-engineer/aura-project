@@ -95,8 +95,16 @@ app.get('/api/tasks', authenticateToken, async (req, res) => {
 });
 
 app.get('/api/stats', authenticateToken, async (req, res) => {
-    const stats = await prisma.stat.findFirst();
-    res.json(stats);
+    const [completed, ongoing, pending] = await Promise.all([
+        prisma.task.count({ where: { status: 'Completed' } }),
+        prisma.task.count({ where: { status: 'In Progress' } }),
+        prisma.task.count({ where: { status: 'Todo' } })
+    ]);
+    
+    const total = completed + ongoing + pending;
+    const efficiency = total > 0 ? `${Math.round((completed / total) * 100)}%` : '0%';
+
+    res.json({ completed, ongoing, pending, efficiency });
 });
 
 app.post('/api/tasks', authenticateToken, async (req, res) => {
@@ -105,6 +113,32 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
         data: { title, status, priority, category }
     });
     res.status(201).json(newTask);
+});
+
+app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const { title, status, priority, category } = req.body;
+    try {
+        const updatedTask = await prisma.task.update({
+            where: { id: parseInt(id) },
+            data: { title, status, priority, category }
+        });
+        res.json(updatedTask);
+    } catch (error) {
+        res.status(404).json({ message: 'Task not found' });
+    }
+});
+
+app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await prisma.task.delete({
+            where: { id: parseInt(id) }
+        });
+        res.status(204).send();
+    } catch (error) {
+        res.status(404).json({ message: 'Task not found' });
+    }
 });
 
 const server = app.listen(PORT, () => {
