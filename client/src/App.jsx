@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import TaskModal from './components/TaskModal';
+import Reports from './components/Reports';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -10,6 +11,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const handleLogin = (newToken, userData) => {
     setToken(newToken);
@@ -150,75 +152,96 @@ function App() {
         </div>
       </header>
 
-      <section className="stats-row">
-        <div className="glass-card stat-item">
-          <span className="stat-label">Efficiency</span>
-          <span className="stat-value gradient-text">{stats.efficiency}</span>
-        </div>
-        <div className="glass-card stat-item">
-          <span className="stat-label">Completed</span>
-          <span className="stat-value">{stats.completed}</span>
-        </div>
-        <div className="glass-card stat-item">
-          <span className="stat-label">In Progress</span>
-          <span className="stat-value">{stats.ongoing}</span>
-        </div>
-        <div className="glass-card stat-item">
-          <span className="stat-label">Pending</span>
-          <span className="stat-value">{stats.pending}</span>
-        </div>
-      </section>
+      <nav className="nav-menu">
+        <button 
+          className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          Dashboard
+        </button>
+        <button 
+          className={`nav-item ${activeTab === 'reports' ? 'active' : ''}`}
+          onClick={() => setActiveTab('reports')}
+        >
+          Reports
+        </button>
+      </nav>
 
-      <main className="dashboard-grid">
-        <div className="glass-card" style={{ gridColumn: 'span 2' }}>
-          <h3>Recent Tasks</h3>
-          <div className="task-list" style={{ marginTop: '1rem' }}>
-            {tasks.map(task => (
-              <div key={task.id} className="task-item">
-                <div style={{ 
-                  width: '10px', 
-                  height: '10px', 
-                  borderRadius: '50%', 
-                  background: task.status === 'Completed' ? '#33ffaa' : '#8833ff' 
-                }}></div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontWeight: 500 }}>{task.title}</p>
-                  <small style={{ color: 'var(--text-secondary)' }}>{task.category}</small>
-                </div>
-                <span className={`badge badge-${task.priority.toLowerCase()}`}>
-                  {task.priority}
-                </span>
-                <div className="task-actions">
-                  <button className="action-btn" onClick={() => handleEditTask(task)} title="Edit">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                  </button>
-                  <button className="action-btn delete" onClick={() => handleDeleteTask(task.id)} title="Delete">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                  </button>
-                </div>
+      {activeTab === 'dashboard' ? (
+        <>
+          <section className="stats-row">
+            <div className="glass-card stat-item">
+              <span className="stat-label">Efficiency</span>
+              <span className="stat-value gradient-text">{stats.efficiency}</span>
+            </div>
+            <div className="glass-card stat-item">
+              <span className="stat-label">Completed</span>
+              <span className="stat-value">{stats.completed}</span>
+            </div>
+            <div className="glass-card stat-item">
+              <span className="stat-label">In Progress</span>
+              <span className="stat-value">{stats.ongoing}</span>
+            </div>
+            <div className="glass-card stat-item">
+              <span className="stat-label">Pending</span>
+              <span className="stat-value">{stats.pending}</span>
+            </div>
+          </section>
+
+          <main className="dashboard-grid">
+            <div className="glass-card" style={{ gridColumn: 'span 2' }}>
+              <h3>Recent Tasks</h3>
+              <div className="task-list" style={{ marginTop: '1rem' }}>
+                {tasks.map(task => (
+                  <div key={task.id} className="task-item">
+                    <div style={{ 
+                      width: '10px', 
+                      height: '10px', 
+                      borderRadius: '50%', 
+                      background: task.status === 'Completed' ? '#33ffaa' : '#8833ff' 
+                    }}></div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontWeight: 500 }}>{task.title}</p>
+                      <small style={{ color: 'var(--text-secondary)' }}>{task.category}</small>
+                    </div>
+                    <span className={`badge badge-${task.priority.toLowerCase()}`}>
+                      {task.priority}
+                    </span>
+                    <div className="task-actions">
+                      <button className="action-btn" onClick={() => handleEditTask(task)} title="Edit">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                      </button>
+                      <button className="action-btn delete" onClick={() => handleDeleteTask(task.id)} title="Delete">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        <div className="glass-card">
-          <h3>Activity Feed</h3>
-          <ul style={{ listStyle: 'none', marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <li style={{ fontSize: '0.85rem' }}>
-              <span style={{ color: 'var(--accent-color)' }}>●</span> Changed "Auth System" to High Priority
-            </li>
-            <li style={{ fontSize: '0.85rem' }}>
-              <span style={{ color: '#ff33aa' }}>●</span> Deployed Aura v1.0.4 to Staging
-            </li>
-            <li style={{ fontSize: '0.85rem' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>●</span> Added 3 new assets to Design System
-            </li>
-          </ul>
-          <button style={{ marginTop: '2rem', width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)' }}>
-            View Full Log
-          </button>
-        </div>
-      </main>
+            <div className="glass-card">
+              <h3>Activity Feed</h3>
+              <ul style={{ listStyle: 'none', marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <li style={{ fontSize: '0.85rem' }}>
+                  <span style={{ color: 'var(--accent-color)' }}>●</span> Changed "Auth System" to High Priority
+                </li>
+                <li style={{ fontSize: '0.85rem' }}>
+                  <span style={{ color: '#ff33aa' }}>●</span> Deployed Aura v1.0.4 to Staging
+                </li>
+                <li style={{ fontSize: '0.85rem' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>●</span> Added 3 new assets to Design System
+                </li>
+              </ul>
+              <button style={{ marginTop: '2rem', width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)' }}>
+                View Full Log
+              </button>
+            </div>
+          </main>
+        </>
+      ) : (
+        <Reports tasks={tasks} />
+      )}
 
       <TaskModal 
         isOpen={isModalOpen} 
