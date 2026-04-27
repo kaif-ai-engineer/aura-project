@@ -12,18 +12,52 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const inactivityTimerRef = React.useRef(null);
+  const SESSION_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
+
+  const handleLogout = React.useCallback(() => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('aura_token');
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+  }, []);
+
+  const resetInactivityTimer = React.useCallback(() => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    if (token) {
+      inactivityTimerRef.current = setTimeout(() => {
+        handleLogout();
+      }, SESSION_TIMEOUT_MS);
+    }
+  }, [token, handleLogout]);
 
   const handleLogin = (newToken, userData) => {
     setToken(newToken);
     setUser(userData);
     localStorage.setItem('aura_token', newToken);
+    resetInactivityTimer();
   };
 
-  const handleLogout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('aura_token');
-  };
+  useEffect(() => {
+    if (token) {
+      const handleActivity = () => resetInactivityTimer();
+      
+      window.addEventListener('mousedown', handleActivity);
+      window.addEventListener('keydown', handleActivity);
+      window.addEventListener('scroll', handleActivity);
+      
+      resetInactivityTimer();
+      
+      return () => {
+        window.removeEventListener('mousedown', handleActivity);
+        window.removeEventListener('keydown', handleActivity);
+        window.removeEventListener('scroll', handleActivity);
+        if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+      };
+    }
+  }, [token, resetInactivityTimer]);
 
   useEffect(() => {
     if (!token) {
@@ -32,6 +66,7 @@ function App() {
     }
 
     const fetchData = async () => {
+      resetInactivityTimer();
       try {
         const headers = { 'Authorization': `Bearer ${token}` };
         const [tasksRes, statsRes, userRes] = await Promise.all([
@@ -75,6 +110,7 @@ function App() {
   const handleDeleteTask = async (taskId) => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
     
+    resetInactivityTimer();
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
         method: 'DELETE',
@@ -83,6 +119,7 @@ function App() {
       if (res.ok) {
         setTasks(tasks.filter(t => t.id !== taskId));
         // Refresh stats
+        resetInactivityTimer();
         const statsRes = await fetch('/api/stats', { headers: { 'Authorization': `Bearer ${token}` } });
         const statsData = await statsRes.json();
         setStats(statsData);
@@ -97,6 +134,7 @@ function App() {
       const url = editingTask ? `/api/tasks/${editingTask.id}` : '/api/tasks';
       const method = editingTask ? 'PUT' : 'POST';
       
+      resetInactivityTimer();
       const res = await fetch(url, {
         method,
         headers: { 
@@ -115,6 +153,7 @@ function App() {
          }
          setIsModalOpen(false);
          // Refresh stats
+         resetInactivityTimer();
          const statsRes = await fetch('/api/stats', { headers: { 'Authorization': `Bearer ${token}` } });
          const statsData = await statsRes.json();
          setStats(statsData);
